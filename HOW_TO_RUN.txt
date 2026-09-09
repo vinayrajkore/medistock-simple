@@ -1,0 +1,134 @@
+===============================================
+  MediStock Simple – HOW TO RUN
+===============================================
+
+TECH STACK:
+  Frontend : React + Vite (JSX)
+  Backend  : Node.js + Express.js
+  Database : MySQL
+
+PRE-REQUIREMENTS (install these once):
+  1. Node.js   → https://nodejs.org  (LTS version)
+  2. MySQL     → via XAMPP https://www.apachefriends.org
+  3. Git       → https://git-scm.com
+
+================================================
+  STEP 1 — DATABASE SETUP
+================================================
+
+1. Open XAMPP Control Panel
+2. Click "Start" next to MySQL
+3. Open phpMyAdmin → http://localhost/phpmyadmin
+4. Click "New" → create a database named:  medistock
+5. Select the "medistock" database
+6. Click "Import" tab → choose the file:  database.sql
+7. Click "Go" — all 3 tables will be created (users, medicines, customers)
+
+================================================
+  STEP 2 — BACKEND SETUP
+================================================
+
+Open a terminal (Command Prompt or PowerShell):
+
+  cd backend
+  npm install
+  node server.js
+
+You should see:
+  ==========================================
+    MediStock Server running on port 1000
+  ==========================================
+  ✓ Database Connected Successfully!
+
+If you see "Database Connection FAILED":
+  → Make sure MySQL is running in XAMPP
+  → Check backend/.env file — DB_PASSWORD should match your MySQL root password
+     (XAMPP default = empty, so leave it blank)
+
+================================================
+  STEP 3 — FRONTEND SETUP (React)
+================================================
+
+Open a NEW terminal (keep the backend terminal open):
+
+  cd frontend-react
+  npm install
+  npm run dev
+
+You should see:
+  VITE ready in XXXX ms
+  Local: http://localhost:5173/
+
+================================================
+  STEP 4 — OPEN THE APP
+================================================
+
+Open your browser and go to:
+
+  http://localhost:5173
+
+1. Click "Register" → create your account
+2. Login with your email and password
+3. Add medicines, generate bills, use the chatbot!
+
+================================================
+  FILE STRUCTURE
+================================================
+
+medistock-simple/
+├── backend/
+│   ├── server.js      ← All API routes (register, login, medicines...)
+│   ├── db.js          ← MySQL connection pool
+│   ├── .env           ← Database credentials
+│   └── package.json   ← Backend dependencies (express, mysql2, bcrypt, cors)
+│
+├── frontend-react/
+│   ├── src/
+│   │   ├── App.jsx              ← React Router — all page routes
+│   │   ├── index.css            ← All CSS styles
+│   │   ├── components/
+│   │   │   ├── Sidebar.jsx      ← Left navigation bar
+│   │   │   └── ProtectedRoute.jsx ← Redirects to login if not logged in
+│   │   └── pages/
+│   │       ├── Home.jsx         ← Landing page
+│   │       ├── Register.jsx     ← User registration
+│   │       ├── Login.jsx        ← User login
+│   │       ├── Dashboard.jsx    ← Stats overview
+│   │       ├── Medicines.jsx    ← Add/Edit/Delete medicines
+│   │       ├── Customers.jsx    ← Generate bills
+│   │       ├── History.jsx      ← Invoice history
+│   │       ├── Chatbot.jsx      ← AI-style chatbot
+│   │       └── Profile.jsx      ← User profile
+│   └── vite.config.js   ← Proxy API calls to backend
+│
+├── database.sql         ← Run this to create all DB tables
+└── HOW_TO_RUN.txt       ← This file!
+
+================================================
+  API ENDPOINTS (for reference)
+================================================
+
+  POST   /register              → Register new user
+  POST   /login                 → Login user
+  GET    /dashboard/:user_id    → Get dashboard stats
+  GET    /medicines/:user_id    → Get all medicines
+  POST   /medicines             → Add medicine
+  PUT    /medicines/:id         → Update medicine
+  DELETE /medicines/:id         → Delete medicine
+  POST   /bill                  → Generate invoice
+  GET    /history/:user_id      → Invoice history
+  POST   /chatbot               → Chatbot query
+  GET    /profile/:user_id      → Get profile
+  PUT    /profile/:user_id      → Update profile
+
+================================================
+  DEFAULT CREDENTIALS (XAMPP)
+================================================
+
+  DB_HOST     = 127.0.0.1
+  DB_PORT     = 3306
+  DB_USER     = root
+  DB_PASSWORD =          (empty — XAMPP default)
+  DB_NAME     = medistock
+
+===============================================
