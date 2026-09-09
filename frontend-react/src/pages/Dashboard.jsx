@@ -1,142 +1,104 @@
-// Dashboard.jsx - Shows summary statistics for the logged-in user
-// Uses useEffect to fetch data when the page loads
+import { useEffect, useState } from 'react';
+import { getSession, getDashboardStats } from '../utils/storage';
 
-import { useState, useEffect } from 'react'
-import Sidebar from '../components/Sidebar'
+export default function Dashboard() {
+  const session = getSession();
+  const [stats, setStats] = useState(null);
 
-function Dashboard() {
-  // Get the logged-in user from localStorage
-  const user = JSON.parse(localStorage.getItem('medistock_user'))
-
-  // State to hold the stats
-  const [stats, setStats] = useState({
-    total_medicines:  0,
-    total_customers:  0,
-    total_invoices:   0,
-    total_sales:      0,
-    low_stock:        0,
-    expired_medicines: 0
-  })
-
-  // State to hold recently added medicines
-  const [recentMeds, setRecentMeds] = useState([])
-
-  // useEffect runs when the component first loads (like componentDidMount)
   useEffect(() => {
-    fetchStats()
-    fetchRecentMeds()
-  }, [])
+    if (session) setStats(getDashboardStats(session.id));
+  }, []);
 
-  // Fetch dashboard stats from backend
-  async function fetchStats() {
-    try {
-      const res  = await fetch(`/dashboard/${user.user_id}`)
-      const data = await res.json()
-      if (data.success) setStats(data.data)
-    } catch (err) {
-      console.error('Error loading stats:', err)
-    }
-  }
-
-  // Fetch recently added medicines
-  async function fetchRecentMeds() {
-    try {
-      const res  = await fetch(`/dashboard/recent-medicines/${user.user_id}`)
-      const data = await res.json()
-      if (data.success) setRecentMeds(data.data)
-    } catch (err) {
-      console.error('Error loading recent medicines:', err)
-    }
-  }
-
-  // Format date to readable format
-  function formatDate(d) {
-    if (!d) return 'N/A'
-    return new Date(d).toLocaleDateString('en-IN')
-  }
+  if (!stats) return <div className="page-loading">Loading…</div>;
 
   return (
-    <div className="layout">
-      <Sidebar />
+    <div className="page">
+      <div className="page-header">
+        <h1>Dashboard</h1>
+        <p>Welcome back, <strong>{session?.name}</strong>!</p>
+      </div>
 
-      <main className="content">
-        {/* Header */}
-        <div className="flex-between mb-20">
-          <h1 className="page-title">📊 Dashboard</h1>
-          <span className="text-muted">Welcome, {user.name}!</span>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="s-icon">💊</div>
-            <div className="s-value">{stats.total_medicines}</div>
-            <div className="s-label">Total Medicines</div>
-          </div>
-          <div className="stat-card">
-            <div className="s-icon">👥</div>
-            <div className="s-value">{stats.total_customers}</div>
-            <div className="s-label">Total Customers</div>
-          </div>
-          <div className="stat-card">
-            <div className="s-icon">🧾</div>
-            <div className="s-value">{stats.total_invoices}</div>
-            <div className="s-label">Total Invoices</div>
-          </div>
-          <div className="stat-card">
-            <div className="s-icon">💰</div>
-            <div className="s-value">₹{Number(stats.total_sales).toFixed(0)}</div>
-            <div className="s-label">Total Sales</div>
-          </div>
-          <div className="stat-card">
-            <div className="s-icon">⚠️</div>
-            <div className="s-value" style={{ color: '#d97706' }}>{stats.low_stock}</div>
-            <div className="s-label">Low Stock</div>
-          </div>
-          <div className="stat-card">
-            <div className="s-icon">❌</div>
-            <div className="s-value" style={{ color: '#dc2626' }}>{stats.expired_medicines}</div>
-            <div className="s-label">Expired</div>
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card blue">
+          <div className="stat-icon">💊</div>
+          <div className="stat-info">
+            <div className="stat-number">{stats.totalMedicines}</div>
+            <div className="stat-label">Total Medicines</div>
           </div>
         </div>
+        <div className="stat-card red">
+          <div className="stat-icon">⚠️</div>
+          <div className="stat-info">
+            <div className="stat-number">{stats.lowStock}</div>
+            <div className="stat-label">Low Stock</div>
+          </div>
+        </div>
+        <div className="stat-card orange">
+          <div className="stat-icon">📅</div>
+          <div className="stat-info">
+            <div className="stat-number">{stats.expiringSoon}</div>
+            <div className="stat-label">Expiring Soon</div>
+          </div>
+        </div>
+        <div className="stat-card green">
+          <div className="stat-icon">🧾</div>
+          <div className="stat-info">
+            <div className="stat-number">{stats.totalBills}</div>
+            <div className="stat-label">Total Invoices</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Recent Medicines Table */}
-        <div className="card">
-          <h3 className="mb-14" style={{ fontSize: '15px' }}>Recently Added Medicines</h3>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Medicine Name</th>
-                  <th>Company</th>
-                  <th>Quantity</th>
-                  <th>Price (₹)</th>
-                  <th>Expiry</th>
+      {/* Revenue */}
+      <div className="revenue-card">
+        <span>💰 Total Revenue</span>
+        <span className="revenue-amount">₹{stats.totalRevenue.toFixed(2)}</span>
+      </div>
+
+      {/* Recent Medicines */}
+      <div className="section-card">
+        <h3>Recent Medicines</h3>
+        {stats.recentMeds.length === 0 ? (
+          <p className="empty-msg">No medicines added yet.</p>
+        ) : (
+          <table className="data-table">
+            <thead><tr><th>Name</th><th>Category</th><th>Qty</th><th>Price</th></tr></thead>
+            <tbody>
+              {stats.recentMeds.map(m => (
+                <tr key={m.id}>
+                  <td>{m.name}</td>
+                  <td>{m.category}</td>
+                  <td className={Number(m.quantity) <= 10 ? 'low-stock' : ''}>{m.quantity}</td>
+                  <td>₹{m.price}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {recentMeds.length === 0 ? (
-                  <tr><td colSpan="5" className="text-center text-muted" style={{ padding: '20px' }}>
-                    No medicines added yet. Go to Medicines page to add some.
-                  </td></tr>
-                ) : (
-                  recentMeds.map((m, i) => (
-                    <tr key={i}>
-                      <td>{m.medicine_name}</td>
-                      <td>{m.company_name}</td>
-                      <td>{m.quantity}</td>
-                      <td>{Number(m.price).toFixed(2)}</td>
-                      <td>{formatDate(m.expiry_date)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-    </div>
-  )
-}
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-export default Dashboard
+      {/* Recent Bills */}
+      <div className="section-card">
+        <h3>Recent Invoices</h3>
+        {stats.recentBills.length === 0 ? (
+          <p className="empty-msg">No invoices generated yet.</p>
+        ) : (
+          <table className="data-table">
+            <thead><tr><th>Invoice</th><th>Customer</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody>
+              {stats.recentBills.map(b => (
+                <tr key={b.id}>
+                  <td>{b.invoiceNo}</td>
+                  <td>{b.customerName}</td>
+                  <td>₹{Number(b.total).toFixed(2)}</td>
+                  <td>{new Date(b.date).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

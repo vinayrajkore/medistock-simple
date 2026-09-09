@@ -2,15 +2,16 @@
 // The left navigation sidebar shown on all logged-in pages
 
 import { NavLink, useNavigate } from 'react-router-dom'
+import { clearSession } from '../utils/storage'
 
 function Sidebar() {
   const navigate = useNavigate()
 
-  // Logout: clear user from storage and go to login
   function handleLogout() {
-    localStorage.removeItem('medistock_user')
+    clearSession()
     navigate('/login')
   }
+
 
   return (
     <aside className="sidebar">

@@ -1,0 +1,12 @@
+/* Cloudflare Pages — serve index.html for all routes */
+/*
+/dashboard    /index.html    200
+/medicines    /index.html    200
+/customers    /index.html    200
+/history      /index.html    200
+/chatbot      /index.html    200
+/profile      /index.html    200
+/login        /index.html    200
+/register     /index.html    200
+/*            /index.html    200
+*/

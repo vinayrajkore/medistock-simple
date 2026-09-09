@@ -1,119 +1,64 @@
-// Profile.jsx - User Profile Page
-// View and update the user's name
+import { useState, useEffect } from 'react';
+import { getSession, updateProfile } from '../utils/storage';
 
-import { useState, useEffect } from 'react'
-import Sidebar from '../components/Sidebar'
+export default function Profile() {
+  const [session, setSession] = useState(getSession());
+  const [form, setForm]   = useState({ name:'', phone:'', pharmacy:'' });
+  const [msg, setMsg]     = useState('');
+  const [error, setError] = useState('');
 
-function Profile() {
-  const user = JSON.parse(localStorage.getItem('medistock_user'))
-
-  const [name,    setName]    = useState('')
-  const [email,   setEmail]   = useState('')
-  const [joined,  setJoined]  = useState('')
-  const [alert,   setAlert]   = useState({ msg: '', type: '' })
-  const [loading, setLoading] = useState(false)
-
-  // Load profile data when page opens
   useEffect(() => {
-    loadProfile()
-  }, [])
+    if (session) setForm({ name: session.name || '', phone: session.phone || '', pharmacy: session.pharmacy || '' });
+  }, []);
 
-  async function loadProfile() {
-    try {
-      const res  = await fetch(`/profile/${user.user_id}`)
-      const data = await res.json()
-      if (data.success) {
-        setName(data.user.name)
-        setEmail(data.user.email)
-        setJoined(data.user.created_at ? new Date(data.user.created_at).toLocaleDateString('en-IN') : '')
-      }
-    } catch (err) {
-      console.error('Error loading profile:', err)
-    }
-  }
+  function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
 
-  // Update name
-  async function handleSave(e) {
-    e.preventDefault()
-    setLoading(true)
-    setAlert({ msg: '', type: '' })
-
-    try {
-      const res  = await fetch(`/profile/${user.user_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        // Also update the name stored in localStorage
-        const updatedUser = { ...user, name }
-        localStorage.setItem('medistock_user', JSON.stringify(updatedUser))
-        showAlert('Name updated successfully!', 'success')
-      } else {
-        showAlert(data.message || 'Update failed', 'error')
-      }
-    } catch (err) {
-      showAlert('Server error', 'error')
-    }
-
-    setLoading(false)
-  }
-
-  function showAlert(msg, type) {
-    setAlert({ msg, type })
-    setTimeout(() => setAlert({ msg: '', type: '' }), 4000)
+  function handleSave(e) {
+    e.preventDefault();
+    setMsg(''); setError('');
+    if (!form.name) { setError('Name is required.'); return; }
+    updateProfile(session.id, form);
+    setSession(getSession());
+    setMsg('Profile updated successfully!');
+    setTimeout(() => setMsg(''), 3000);
   }
 
   return (
-    <div className="layout">
-      <Sidebar />
+    <div className="page">
+      <div className="page-header"><h1>My Profile</h1></div>
 
-      <main className="content">
-        <h1 className="page-title">👤 Profile</h1>
-
-        {alert.msg && <div className={`alert alert-${alert.type}`}>{alert.msg}</div>}
-
-        <div className="card" style={{ maxWidth: '440px' }}>
-          {/* Avatar with first letter of name */}
-          <div className="text-center mb-20">
-            <div className="profile-avatar">{name.charAt(0).toUpperCase() || '?'}</div>
-            <p className="text-muted">{email}</p>
-            {joined && <p className="text-muted" style={{ fontSize: '12px' }}>Joined: {joined}</p>}
-          </div>
-
-          {/* Edit name form */}
-          <form onSubmit={handleSave}>
-            <div className="form-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your name"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email Address (cannot be changed)</label>
-              <input
-                type="email"
-                value={email}
-                disabled
-                style={{ background: '#f3f4f6', cursor: 'not-allowed' }}
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? 'Saving...' : 'Update Name'}
-            </button>
-          </form>
+      <div className="table-card" style={{maxWidth:'500px'}}>
+        <div style={{textAlign:'center',marginBottom:'20px'}}>
+          <div style={{fontSize:'64px'}}>👤</div>
+          <h3>{session?.name}</h3>
+          <p style={{color:'#607d8b',fontSize:'13px'}}>{session?.email}</p>
         </div>
-      </main>
-    </div>
-  )
-}
 
-export default Profile
+        {msg   && <div className="alert success">{msg}</div>}
+        {error && <div className="alert error">{error}</div>}
+
+        <form onSubmit={handleSave}>
+          <div className="form-group">
+            <label>Full Name *</label>
+            <input name="name" value={form.name} onChange={handleChange}/>
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input value={session?.email || ''} disabled style={{background:'#f5f5f5',cursor:'not-allowed'}}/>
+          </div>
+          <div className="form-group">
+            <label>Phone</label>
+            <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone number"/>
+          </div>
+          <div className="form-group">
+            <label>Pharmacy Name</label>
+            <input name="pharmacy" value={form.pharmacy} onChange={handleChange} placeholder="Your pharmacy"/>
+          </div>
+          <button type="submit" className="btn-primary" style={{width:'100%'}}>
+            💾 Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

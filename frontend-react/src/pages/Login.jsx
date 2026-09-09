@@ -1,94 +1,56 @@
-// Login.jsx - User Login Page
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { loginUser } from '../utils/storage';
 
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+export default function Login() {
+  const navigate = useNavigate();
+  const [form, setForm]     = useState({ email: '', password: '' });
+  const [error, setError]   = useState('');
+  const [loading, setLoading] = useState(false);
 
-function Login() {
-  const navigate = useNavigate()
-
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [alert, setAlert]       = useState({ msg: '', type: '' })
-  const [loading, setLoading]   = useState(false)
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    setLoading(true)
-    setAlert({ msg: '', type: '' })
-
+    e.preventDefault();
+    setError('');
+    if (!form.email || !form.password) { setError('Email and password required.'); return; }
+    setLoading(true);
     try {
-      const res  = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        // Save user info in localStorage so we know they're logged in
-        // localStorage persists even after browser refresh
-        localStorage.setItem('medistock_user', JSON.stringify(data.user))
-
-        // Redirect to dashboard
-        navigate('/dashboard')
-      } else {
-        setAlert({ msg: data.message || 'Login failed', type: 'error' })
-      }
+      const session = loginUser(form.email, form.password);
+      navigate('/dashboard');
     } catch (err) {
-      setAlert({ msg: 'Cannot connect to server. Make sure backend is running.', type: 'error' })
+      setError(err.message);
     }
-
-    setLoading(false)
+    setLoading(false);
   }
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-box">
-        <h2>Welcome Back 👋</h2>
-        <p className="sub">Login to access your pharmacy dashboard</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">💊</div>
+        <h2>Welcome Back</h2>
+        <p className="auth-sub">Login to MediStock</p>
 
-        {alert.msg && (
-          <div className={`alert alert-${alert.type}`}>{alert.msg}</div>
-        )}
+        {error && <div className="alert error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
+            <label>Email</label>
+            <input name="email" type="email" placeholder="you@example.com" value={form.email} onChange={handleChange}/>
           </div>
-
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
+            <input name="password" type="password" placeholder="Your password" value={form.password} onChange={handleChange}/>
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={loading}
-          >
-            {loading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Logging in…' : 'Login'}
           </button>
         </form>
 
-        <p className="text-center mt-12 text-muted">
-          Don't have an account? <Link to="/register">Register here</Link>
-        </p>
+        <p className="auth-switch">No account? <Link to="/register">Register</Link></p>
       </div>
     </div>
-  )
+  );
 }
-
-export default Login

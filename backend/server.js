@@ -6,6 +6,7 @@ require("dotenv").config();
 const express = require("express");
 const bcrypt  = require("bcrypt");
 const cors    = require("cors");
+const path    = require("path");
 const db      = require("./db");
 
 const app = express();
@@ -20,8 +21,14 @@ app.use(cors());
 // Parse incoming JSON request bodies
 app.use(express.json());
 
-// NOTE: No static file serving here — React frontend runs on Vite (port 5173)
-//       This server is API-only (port 1000)
+// In production (Render), serve the React build from frontend-react/dist
+// In development, React runs on Vite (port 5173) with proxy
+const isProduction = process.env.NODE_ENV === "production";
+if (isProduction) {
+    app.use(express.static(path.join(__dirname, "../frontend-react/dist")));
+    console.log("Serving React build from frontend-react/dist");
+}
+
 
 
 // =============================================
@@ -551,6 +558,17 @@ app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
+
+// =============================================
+// REACT ROUTER — CATCH-ALL (must be LAST)
+// In production, any unknown GET route serves the React app
+// This allows React Router to handle /dashboard, /medicines etc.
+// =============================================
+if (isProduction) {
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "../frontend-react/dist/index.html"));
+    });
+}
 
 // =============================================
 // START SERVER
